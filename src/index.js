@@ -184,6 +184,28 @@ class JsonApi {
     return this.runMiddleware(req)
   }
 
+  call (action, payload, params = {}, meta = {}) {
+    let lastRequest = _last(this.builderStack)
+    let model = _get(lastRequest, 'model')
+
+    if (this.models[model].options.actions !== undefined && Object.keys(this.models[model].options.actions).include(action)) {
+      let req = {
+        method: this.models[model].options.actions[action],
+        url: `${this.urlFor()}/${action}`,
+        model,
+        data: payload,
+        params,
+        meta
+      }
+
+      if (this.resetBuilderOnCall) {
+        this.resetBuilder()
+      }
+
+      return this.runMiddleware(req)
+    }
+  }
+
   patch (payload, params = {}, meta = {}) {
     let lastRequest = _last(this.builderStack)
 
@@ -254,7 +276,7 @@ class JsonApi {
 
   replaceMiddleware (middlewareName, newMiddleware) {
     let index = _findIndex(this.middleware, ['name', middlewareName])
-    this.middleware[index] = newMiddleware
+    this.middleware[index] = newMiddlewarek
   }
 
   define (modelName, attributes, options = {}) {
@@ -262,6 +284,21 @@ class JsonApi {
       attributes: attributes,
       options: options
     }
+    //
+    // if (options.actions !== undefined) {
+    //   this.modelActions[modelName] = Object.keys(options.actions)
+    //   options.actions.forEach(actionName => {
+    //     this[actionName] = (payload) => {
+    //       let lastRequest = _last(this.builderStack)
+    //       let model = _get(lastRequest, 'model')
+    //       if (this.modelActions[model].includes(actionName)) {
+    //         let req = {
+    //           method: 'POST',
+    //         }
+    //       }
+    //     }
+    //   })
+    // }
   }
 
   resetMiddleware () {
