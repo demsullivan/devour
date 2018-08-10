@@ -184,16 +184,17 @@ class JsonApi {
     return this.runMiddleware(req)
   }
 
-  call (action, payload, params = {}, meta = {}) {
+  call (action, data = {}, params = {}, meta = {}) {
     let lastRequest = _last(this.builderStack)
     let model = _get(lastRequest, 'model')
 
-    if (this.models[model].options.actions !== undefined && Object.keys(this.models[model].options.actions).include(action)) {
+    if (this.models[model].options.actions !== undefined && Object.keys(this.models[model].options.actions).includes(action)) {
       let req = {
+        isAction: true,
         method: this.models[model].options.actions[action],
         url: `${this.urlFor()}/${action}`,
         model,
-        data: payload,
+        data,
         params,
         meta
       }
@@ -202,7 +203,20 @@ class JsonApi {
         this.resetBuilder()
       }
 
-      return this.runMiddleware(req)
+      let payload = {req: req, jsonApi: this}
+
+      return this.axios(req).then((res) => {
+        payload.res = res
+        let responsePromise = Promise.resolve(payload)
+        return this.applyResponseMiddleware(responsePromise)
+      })
+        .catch((err) => {
+          Logger.error(err)
+          let errorPromise = Promise.resolve(err)
+          return this.applyErrorMiddleware(errorPromise).then(err => {
+            return Promise.reject(err)
+          })
+        })
     }
   }
 
