@@ -2,6 +2,7 @@ const _forOwn = require('lodash/forOwn')
 const _isArray = require('lodash/isArray')
 const _isUndefined = require('lodash/isUndefined')
 const _isPlainObject = require('lodash/isPlainObject')
+const _isObjectLike = require('lodash/isObjectLike')
 const _includes = require('lodash/includes')
 const _find = require('lodash/find')
 const _get = require('lodash/get')
@@ -61,7 +62,7 @@ function resource (item, included, useCache = false) {
     if (_isUndefined(attrConfig) && attr !== 'id') {
       Logger.warn(`Resource response for type "${item.type}" contains attribute "${attr}", but it is not present on model config and therefore not deserialized.`)
     } else {
-      if (typeof attrConfig === 'object' && !_isUndefined(attrConfig.format)) {
+      if (_isObjectLike(attrConfig) && !_isUndefined(attrConfig.format)) {
         value = attrConfig.format(value)
       }
 
